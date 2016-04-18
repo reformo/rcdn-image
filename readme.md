@@ -54,6 +54,8 @@ that folder's content
 
 With the configuration mentioned above you can use any VPS that has small resources (like 1GB RAM anf 1 CPU).
 
+**Nginx reverse proxy example**
+
 ```
 server {
         listen   80;
