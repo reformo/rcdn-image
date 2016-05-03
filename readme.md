@@ -1,4 +1,6 @@
 # Image Service
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/reformo/rcdn-image/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/reformo/rcdn-image/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/reformo/rcdn-image/badges/build.png?b=master)](https://scrutinizer-ci.com/g/reformo/rcdn-image/build-status/master)
+
 
 A simple service written in Python that is used to resize images that have been already uploaded to server
 using method that user preferred (FTP, CMS, Member's upload etc.)
