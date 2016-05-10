@@ -87,31 +87,31 @@ class BucketHandler(ReturnImageHandler):
                 image.save(o, image.format, quality=90)
                 output = o.getvalue()
             elif process_type == 'c':
-                box = None
-                if original_width >= original_height:
-                    new_width_tmp = new_height*original_width/original_height
-                    image.thumbnail((new_width_tmp, new_height), Image.ANTIALIAS)
-                    left = int((new_width_tmp - new_width)/2)
-                    right = int((new_width_tmp + new_width)/2)
-                    box = (left, 0, right, new_height)
-                elif original_height > original_width:
-                    new_height_tmp = new_width*original_height/original_width
-                    image.thumbnail((new_width, new_height_tmp), Image.ANTIALIAS)
-                    top = int((new_height_tmp - new_height)/2)
-                    bottom = int((new_height_tmp + new_height)/2)
-                    box = (0, top, new_width, bottom)
+                box = self.innerDetermineBox()
                 new_image = image.crop(box)
                 new_image.load()
                 new_image.save(output_file, image.format, quality=90)
                 new_image.save(o, image.format, quality=90)
                 output = o.getvalue()
             self.set_header('Content-type', 'image/'+image.format)
-        else:
-            self.set_status(404, 'Not Found')
-            output = "404/rcdn o: ("+options.originals_path+" --- "+original_slug+")" + original_file + " n:" + \
-                     output_file + " op:" + " ".join(output_options)
+        self.set_status(404, 'Not Found')
+        output = "404/rcdn o: ("+options.originals_path+" --- "+original_slug+")" + original_file + " n:" + \
+            output_file + " op:" + " ".join(output_options)
         self.write(output)
 
+    def innerDetermineBox(self, original_width, original_height, new_width, new_height, image):
+        if original_width >= original_height:
+            new_width_tmp = new_height * original_width / original_height
+            image.thumbnail((new_width_tmp, new_height), Image.ANTIALIAS)
+            left = int((new_width_tmp - new_width) / 2)
+            right = int((new_width_tmp + new_width) / 2)
+            return (left, 0, right, new_height)
+
+        new_height_tmp = new_width * original_height / original_width
+        image.thumbnail((new_width, new_height_tmp), Image.ANTIALIAS)
+        top = int((new_height_tmp - new_height) / 2)
+        bottom = int((new_height_tmp + new_height) / 2)
+        return (0, top, new_width, bottom)
 
 def main():
     tornado.options.parse_command_line()
