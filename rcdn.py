@@ -65,15 +65,9 @@ class BucketHandler(ReturnImageHandler):
             image = Image.open(original_file)
             image.load()
             original_width, original_height = image.size
-            for item in output_options:
-                if item.startswith('w_'):
-                    new_width = int(item.replace('w_', ''))
-                if item.startswith('h_'):
-                    new_height = int(item.replace('h_', ''))
-                if item.startswith('crop'):
-                    process_type = 'c'
-                if item.startswith('a_'):
-                    new_adjust = item.replace('a_', '')
+            new_width, new_height, new_adjust, process_type = self.determine_new_options(output_options, new_width,
+                                                                                         new_height, process_type,
+                                                                                         new_adjust)
             if process_type == 't':
                 output = self.return_thumbnail(new_adjust, new_width, new_height, original_width, original_height, size,
                                                image, output_file)
@@ -87,7 +81,20 @@ class BucketHandler(ReturnImageHandler):
         self.write(output)
 
     @staticmethod
-    def inner_determine_box(original_width, original_height, new_width, new_height, image):
+    def determine_new_options(output_options, new_width, new_height, process_type, new_adjust):
+        for item in output_options:
+            if item.startswith('w_'):
+                new_width = int(item.replace('w_', ''))
+            if item.startswith('h_'):
+                new_height = int(item.replace('h_', ''))
+            if item.startswith('crop'):
+                process_type = 'c'
+            if item.startswith('a_'):
+                new_adjust = item.replace('a_', '')
+        return new_width, new_height, new_adjust, process_type
+
+    @staticmethod
+    def determine_box(original_width, original_height, new_width, new_height, image):
         if original_width >= original_height:
             new_width_tmp = new_height * original_width / original_height
             image.thumbnail((new_width_tmp, new_height), Image.ANTIALIAS)
@@ -116,7 +123,7 @@ class BucketHandler(ReturnImageHandler):
 
     def return_crop(self, image, output_file, original_width, original_height, new_width, new_height):
         o = BytesIO()
-        box = self.inner_determine_box(original_width, original_height, new_width, new_height, image)
+        box = self.determine_box(original_width, original_height, new_width, new_height, image)
         new_image = image.crop(box)
         new_image.load()
         new_image.save(output_file, image.format, quality=90)
