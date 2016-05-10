@@ -65,7 +65,6 @@ class BucketHandler(ReturnImageHandler):
             image = Image.open(original_file)
             image.load()
             original_width, original_height = image.size
-            o = BytesIO()
             for item in output_options:
                 if item.startswith('w_'):
                     new_width = int(item.replace('w_', ''))
@@ -76,43 +75,55 @@ class BucketHandler(ReturnImageHandler):
                 if item.startswith('a_'):
                     new_adjust = item.replace('a_', '')
             if process_type == 't':
-                if new_adjust == 'w':
-                    new_height = new_width*original_height/original_width
-                elif new_adjust == 'h':
-                    new_width = new_height*original_width/original_height
-                size.append(new_width)
-                size.append(new_height)
-                image.thumbnail(size, Image.ANTIALIAS)
-                image.save(output_file, image.format, quality=90)
-                image.save(o, image.format, quality=90)
-                output = o.getvalue()
+                output = self.return_humbnail(new_adjust, new_width, new_height, original_width, original_height,
+                                              size, image, output_file)
             elif process_type == 'c':
-                box = self.innerDetermineBox()
-                new_image = image.crop(box)
-                new_image.load()
-                new_image.save(output_file, image.format, quality=90)
-                new_image.save(o, image.format, quality=90)
-                output = o.getvalue()
+                output = self.return_crop()
             self.set_header('Content-type', 'image/'+image.format)
-        self.set_status(404, 'Not Found')
-        output = "404/rcdn o: ("+options.originals_path+" --- "+original_slug+")" + original_file + " n:" + \
-            output_file + " op:" + " ".join(output_options)
+        else:
+            self.set_status(404, 'Not Found')
+            output = "404/rcdn o: ("+options.originals_path+" --- "+original_slug+")" + original_file + " n:" + \
+                output_file + " op:" + " ".join(output_options)
         self.write(output)
 
-    def innerDetermineBox(self, original_width, original_height, new_width, new_height, image):
+    @staticmethod
+    def inner_determine_box(original_width, original_height, new_width, new_height, image):
         if original_width >= original_height:
             new_width_tmp = new_height * original_width / original_height
             image.thumbnail((new_width_tmp, new_height), Image.ANTIALIAS)
             left = int((new_width_tmp - new_width) / 2)
             right = int((new_width_tmp + new_width) / 2)
             return (left, 0, right, new_height)
-
         new_height_tmp = new_width * original_height / original_width
         image.thumbnail((new_width, new_height_tmp), Image.ANTIALIAS)
         top = int((new_height_tmp - new_height) / 2)
         bottom = int((new_height_tmp + new_height) / 2)
         return (0, top, new_width, bottom)
 
+    @staticmethod
+    def return_thumbnail(new_adjust, new_width, new_height, original_width, original_height, size, image,
+                        output_file):
+        o = BytesIO()
+        if new_adjust == 'w':
+            new_height = new_width * original_height / original_width
+        elif new_adjust == 'h':
+            new_width = new_height * original_width / original_height
+        size.append(new_width)
+        size.append(new_height)
+        image.thumbnail(size, Image.ANTIALIAS)
+        image.save(output_file, image.format, quality=90)
+        image.save(o, image.format, quality=90)
+        return o.getvalue()
+
+    @staticmethod
+    def return_crop(image, output_file):
+        o = BytesIO()
+        box = self.inner_determine_box()
+        new_image = image.crop(box)
+        new_image.load()
+        new_image.save(output_file, image.format, quality=90)
+        new_image.save(o, image.format, quality=90)
+        returno.getvalue()
 def main():
     tornado.options.parse_command_line()
     application = tornado.web.Application([
