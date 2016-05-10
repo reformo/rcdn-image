@@ -75,10 +75,10 @@ class BucketHandler(ReturnImageHandler):
                 if item.startswith('a_'):
                     new_adjust = item.replace('a_', '')
             if process_type == 't':
-                output = self.return_humbnail(new_adjust, new_width, new_height, original_width, original_height,
-                                              size, image, output_file)
+                output = self.return_thumbnail(new_adjust, new_width, new_height, original_width, original_height, size,
+                                               image, output_file)
             elif process_type == 'c':
-                output = self.return_crop()
+                output = self.return_crop(image, output_file, original_width, original_height, new_width, new_height)
             self.set_header('Content-type', 'image/'+image.format)
         else:
             self.set_status(404, 'Not Found')
@@ -93,16 +93,15 @@ class BucketHandler(ReturnImageHandler):
             image.thumbnail((new_width_tmp, new_height), Image.ANTIALIAS)
             left = int((new_width_tmp - new_width) / 2)
             right = int((new_width_tmp + new_width) / 2)
-            return (left, 0, right, new_height)
+            return left, 0, right, new_height
         new_height_tmp = new_width * original_height / original_width
         image.thumbnail((new_width, new_height_tmp), Image.ANTIALIAS)
         top = int((new_height_tmp - new_height) / 2)
         bottom = int((new_height_tmp + new_height) / 2)
-        return (0, top, new_width, bottom)
+        return 0, top, new_width, bottom
 
     @staticmethod
-    def return_thumbnail(new_adjust, new_width, new_height, original_width, original_height, size, image,
-                        output_file):
+    def return_thumbnail(new_adjust, new_width, new_height, original_width, original_height, size, image, output_file):
         o = BytesIO()
         if new_adjust == 'w':
             new_height = new_width * original_height / original_width
@@ -115,15 +114,16 @@ class BucketHandler(ReturnImageHandler):
         image.save(o, image.format, quality=90)
         return o.getvalue()
 
-    @staticmethod
-    def return_crop(image, output_file):
+    def return_crop(self, image, output_file, original_width, original_height, new_width, new_height):
         o = BytesIO()
-        box = self.inner_determine_box()
+        box = self.inner_determine_box(original_width, original_height, new_width, new_height, image)
         new_image = image.crop(box)
         new_image.load()
         new_image.save(output_file, image.format, quality=90)
         new_image.save(o, image.format, quality=90)
-        returno.getvalue()
+        return o.getvalue()
+
+
 def main():
     tornado.options.parse_command_line()
     application = tornado.web.Application([
